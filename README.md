@@ -1,6 +1,6 @@
 # pixijs-tran
 
-##基于pixi框架结合shader实现视频专场
+##基于pixi框架结合shader实现视频转场
 
 个人公众号：自学囧途
 

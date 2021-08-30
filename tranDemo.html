@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>转场demo</title>
+</head>
+<script src="./js/pixi.min.v6.0.4.js"></script>
+<script src="./shader/shader.js"></script>
+<body>
+<div>转场 :
+    <select id="tran" onchange="selectTran(this)">
+        <option value="">请选择</option>
+        <option value="cube">cube</option>
+        <option value="GridFlip">GridFlip</option>
+        <option value="heart">heart</option>
+    </select>
+</div>
+<div>
+    <canvas></canvas>
+</div>
+</body>
+<script type="text/javascript">
+    function selectTran(dom) {
+        var value = dom.options[dom.selectedIndex].value; //获取当前选择项的值
+        var glslItem = getFs(value)
+
+        if(Object.keys(glslItem).length === 0){
+            videoSprite.filters = []
+            return
+        }
+
+        var customfilter = createTranFilter(fromTexture,toTexture,glslItem)
+        videoSprite.filters = [customfilter]
+    }
+    function getFs(name) {
+        var g = {}
+        TranGlsl.forEach((item)=>{
+            if(item.name === name && item.glsl !== ''){
+                g=item
+            }
+        })
+        return g
+    }
+
+    function buildGlsl(){
+        for(let i=0;i<Glsls.length;i++){
+            TranGlsl = Glsls
+            TranGlsl[i].glsl =  FragmentShader_0 + Glsls[i].glsl + FragmentShader_1
+        }
+    }
+
+    var TranGlsl = []
+    buildGlsl()
+
+    function createTranFilter(from,to,glslItem){
+        var uniforms = {
+            from,
+            to,
+            progress: 0.0
+        }
+
+        uniforms = Object.assign(uniforms,glslItem.defaultParams)
+
+        console.log('uniforms',uniforms)
+        console.log('glslItem',glslItem)
+
+        const customfilter = new PIXI.Filter(
+            VertexShader,
+            glslItem.glsl,
+            uniforms
+        )
+
+        var f = true
+        setInterval(()=>{
+            if(f){
+                customfilter.uniforms.progress += 0.1
+                if (customfilter.uniforms.progress >= 1){
+                    f = false
+                }
+            }else {
+                customfilter.uniforms.progress -= 0.1
+                if(customfilter.uniforms.progress <= 0){
+                    f = true
+                }
+            }
+
+        },80)
+
+        return customfilter
+    }
+
+    const canvasDom = document.querySelector("canvas")
+    const mainApp = new PIXI.Application({width:800, height:800, view:canvasDom});
+
+    const fromVideoSrc = './video/from.mp4'
+    const fromTexture = PIXI.Texture.from(fromVideoSrc);
+    fromTexture.baseTexture.resource.source.loop=true
+    const toVideoSrc = './video/to.mp4'
+    const toTexture = PIXI.Texture.from(toVideoSrc);
+    toTexture.baseTexture.resource.source.loop=true
+
+    var videoSprite = new PIXI.Sprite(fromTexture);
+
+    videoSprite.x = 10;
+    videoSprite.y = 10;
+    videoSprite.width = 640;
+    videoSprite.height = 480;
+
+    mainApp.stage.addChild(videoSprite)
+    mainApp.start()
+</script>
+</html>
